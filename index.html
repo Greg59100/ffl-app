@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="fr">
 <head>
@@ -218,7 +219,7 @@ textarea.input{resize:none;height:80px}
 <div id="app">
 
 <!-- ════ AUTH ════ -->
-<div class="screen active" id="s-auth" style="justify-content:center">
+<div class="screen" id="s-auth" style="justify-content:center">
   <div class="auth-logo">FRIENDS <em>FARMERS</em><br>LEAGUE</div>
   <div class="auth-sub">La ligue entre amis</div>
   <div class="auth-box">
@@ -575,24 +576,29 @@ async function authMagicLink() {
 
 async function signOut() {
   await sb.auth.signOut();
-  currentUser = null; currentProfile = null;
-  myLeagues = []; myProno = L1_TEAMS.map(t=>t.id); notifications = [];
-  document.getElementById('bottom-nav').style.display = 'none';
-  showScreen('s-auth');
+  // onAuthStateChange SIGNED_OUT will handle the UI
 }
 
 // Listen to auth state changes
 sb.auth.onAuthStateChange(async (event, session) => {
-  if (session?.user) {
-    currentUser = session.user;
-    await loadProfile();
-    await loadMyData();
-    document.getElementById('bottom-nav').style.display = 'flex';
-    nav('s-home');
-    fetchL1();
-  } else {
+  if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED' || event === 'USER_UPDATED') {
+    if (session?.user) {
+      currentUser = session.user;
+      await loadProfile();
+      await loadMyData();
+      document.getElementById('bottom-nav').style.display = 'flex';
+      // Force hide auth screen and show home
+      document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+      document.getElementById('s-home').classList.add('active');
+      document.querySelectorAll('.nav-btn').forEach(b=>b.classList.toggle('active',b.dataset.nav==='s-home'));
+      fetchL1().then(()=>renderHome());
+    }
+  } else if (event === 'SIGNED_OUT') {
+    currentUser = null; currentProfile = null;
+    myLeagues = []; myProno = L1_TEAMS.map(t=>t.id); notifications = [];
     document.getElementById('bottom-nav').style.display = 'none';
-    showScreen('s-auth');
+    document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+    document.getElementById('s-auth').classList.add('active');
   }
 });
 
@@ -1085,13 +1091,25 @@ function toast(msg, duration=2500) {
 // ═══════════════════════════════════════════════
 //  INIT
 // ═══════════════════════════════════════════════
-// Auth state listener handles the rest
-// Check for existing session on load
 (async () => {
+  // Check for existing session on load
   const {data:{session}} = await sb.auth.getSession();
-  if (!session) {
-    // No session - show auth screen
+  if (session?.user) {
+    // Already logged in
+    currentUser = session.user;
+    await loadProfile();
+    await loadMyData();
+    document.getElementById('bottom-nav').style.display = 'flex';
+    // Hide all screens then show home
+    document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+    document.getElementById('s-home').classList.add('active');
+    document.querySelectorAll('.nav-btn').forEach(b=>b.classList.toggle('active',b.dataset.nav==='s-home'));
+    fetchL1().then(()=>renderHome());
+  } else {
+    // Not logged in - show auth
     document.getElementById('bottom-nav').style.display = 'none';
+    document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+    document.getElementById('s-auth').classList.add('active');
   }
 })();
 </script>
