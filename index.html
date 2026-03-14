@@ -34,7 +34,7 @@ body{background:var(--black);color:var(--white);font-family:var(--font-b);font-s
 .icon-btn{width:36px;height:36px;border-radius:9px;background:var(--card);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:16px;flex-shrink:0;transition:background .15s}
 .icon-btn:hover{background:var(--card2)}
 .topbar-row{display:flex;align-items:center;gap:10px}
-.bottom-nav{display:flex;background:rgba(10,10,10,.97);backdrop-filter:blur(20px);border-top:1px solid var(--border);padding:8px 0 max(env(safe-area-inset-bottom),12px);flex-shrink:0}
+.bottom-nav{display:none;background:rgba(10,10,10,.97);backdrop-filter:blur(20px);border-top:1px solid var(--border);padding:8px 0 max(env(safe-area-inset-bottom),12px);flex-shrink:0}.bottom-nav.visible{display:flex}
 .nav-btn{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;padding:2px 0;opacity:.4;transition:opacity .2s}
 .nav-btn.active{opacity:1}
 .nav-btn .ni{font-size:20px;line-height:1;display:flex;align-items:center;justify-content:center;color:var(--gray2)}.nav-btn .ni svg{stroke:currentColor}.nav-btn.active .ni{color:var(--green)}
@@ -411,7 +411,7 @@ textarea.input{resize:none;height:80px}
 </div>
 
 <!-- ════ BOTTOM NAV ════ -->
-<nav class="bottom-nav" id="bottom-nav" style="display:none">
+<nav class="bottom-nav" id="bottom-nav">
   <div class="nav-btn active" data-nav="s-home" onclick="nav('s-home')"><div class="ni"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9.5L12 3l9 6.5V20a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9.5z"/><path d="M9 21V12h6v9"/></svg></div><div class="nl">Accueil</div></div>
   <div class="nav-btn" data-nav="s-l1" onclick="nav('s-l1')"><div class="ni"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M7 8h10M7 12h10M7 16h6"/></svg></div><div class="nl">Ligue 1</div></div>
   <div class="nav-btn" data-nav="s-prono" onclick="nav('s-prono')"><div class="ni"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="4"/><line x1="12" y1="2" x2="12" y2="5"/><line x1="12" y1="19" x2="12" y2="22"/><line x1="2" y1="12" x2="5" y2="12"/><line x1="19" y1="12" x2="22" y2="12"/></svg></div><div class="nl">Pronos</div></div>
@@ -760,7 +760,7 @@ async function signOut() {
   await sbSignOut();
   currentUser = null; currentProfile = null;
   myLeagues = []; myProno = L1_TEAMS.map(t=>t.id); notifications = [];
-  document.getElementById('bottom-nav').style.display = 'none';
+  document.getElementById('bottom-nav').classList.remove('visible');
   document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
   document.getElementById('s-auth').classList.remove('hidden');
   document.getElementById('s-auth').classList.add('active');
@@ -1255,7 +1255,7 @@ function toast(msg, duration=2500) {
 //  INIT
 // ═══════════════════════════════════════════════
 function goHome() {
-  document.getElementById('bottom-nav').style.display = 'flex';
+  document.getElementById('bottom-nav').classList.add('visible');
   document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
   document.getElementById('s-home').classList.add('active');
   document.getElementById('s-auth').classList.add('hidden');
@@ -1264,7 +1264,7 @@ function goHome() {
 }
 
 function goAuth() {
-  document.getElementById('bottom-nav').style.display = 'none';
+  document.getElementById('bottom-nav').classList.remove('visible');
   document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
   document.getElementById('s-auth').classList.remove('hidden');
   document.getElementById('s-auth').classList.add('active');
