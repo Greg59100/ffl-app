@@ -194,7 +194,8 @@ textarea.input{resize:none;height:80px}
 .modal-handle{width:36px;height:4px;background:var(--gray2);border-radius:2px;margin:0 auto 16px}
 .modal-title{font-family:var(--font-h);font-weight:900;font-size:22px;text-transform:uppercase;margin-bottom:14px}
 /* AUTH SCREEN */
-#s-auth{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:40px 24px;gap:0}
+#s-auth{position:fixed;inset:0;z-index:1000;background:var(--black);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:40px 24px;gap:0;overflow-y:auto}
+#s-auth.hidden{display:none !important}
 .auth-logo{font-family:var(--font-h);font-weight:900;font-size:32px;text-transform:uppercase;letter-spacing:2px;text-align:center;margin-bottom:6px}
 .auth-logo em{color:var(--green);font-style:normal}
 .auth-sub{font-size:12px;color:var(--gray);letter-spacing:3px;text-transform:uppercase;margin-bottom:40px}
@@ -590,6 +591,7 @@ sb.auth.onAuthStateChange(async (event, session) => {
       // Force hide auth screen and show home
       document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
       document.getElementById('s-home').classList.add('active');
+      document.getElementById('s-auth').classList.add('hidden');
       document.querySelectorAll('.nav-btn').forEach(b=>b.classList.toggle('active',b.dataset.nav==='s-home'));
       fetchL1().then(()=>renderHome());
     }
@@ -598,6 +600,7 @@ sb.auth.onAuthStateChange(async (event, session) => {
     myLeagues = []; myProno = L1_TEAMS.map(t=>t.id); notifications = [];
     document.getElementById('bottom-nav').style.display = 'none';
     document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+    document.getElementById('s-auth').classList.remove('hidden');
     document.getElementById('s-auth').classList.add('active');
   }
 });
@@ -1109,6 +1112,7 @@ function toast(msg, duration=2500) {
     // Not logged in - show auth
     document.getElementById('bottom-nav').style.display = 'none';
     document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+    document.getElementById('s-auth').classList.remove('hidden');
     document.getElementById('s-auth').classList.add('active');
   }
 })();
