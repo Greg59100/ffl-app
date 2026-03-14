@@ -453,16 +453,6 @@ textarea.input{resize:none;height:80px}
 </div>
 
 <script>
-// Bind auth button safely after DOM ready
-document.addEventListener('DOMContentLoaded', function() {
-  var btn = document.getElementById('auth-btn');
-  if (btn) btn.onclick = function() { authSubmit(); };
-  var emailInput = document.getElementById('auth-email');
-  var passInput = document.getElementById('auth-password');
-  if (emailInput) emailInput.onkeydown = function(e) { if(e.key==='Enter') authSubmit(); };
-  if (passInput) passInput.onkeydown = function(e) { if(e.key==='Enter') authSubmit(); };
-});
-
 // ═══════════════════════════════════════════════
 //  SUPABASE INIT
 // ═══════════════════════════════════════════════
@@ -1288,6 +1278,17 @@ function goAuth() {
   } else {
     goAuth();
   }
+})();
+
+// Bind buttons directly at script end
+(function bindButtons() {
+  var btn = document.getElementById('auth-btn');
+  if (btn) { btn.onclick = authSubmit; }
+  var email = document.getElementById('auth-email');
+  var pass = document.getElementById('auth-password');
+  if (email) email.onkeydown = function(e){ if(e.key==='Enter') authSubmit(); };
+  if (pass) pass.onkeydown = function(e){ if(e.key==='Enter') authSubmit(); };
+  console.log('Buttons bound:', btn ? 'OK' : 'FAIL');
 })();
 </script>
 </body>
