@@ -1143,12 +1143,12 @@ async function createLeague() {
     // Save initial prono
     await dbInsert('pronostics', { league_id: league.id, user_id: currentUser.id, ranking: myProno }, false);
 
-    addNotif('g','🏆',\`Ligue <b>\${name}</b> créée ! Code : <b class="y">\${code}</b>\`);
+    addNotif('g','🏆',`Ligue <b>${name}</b> créée ! Code : <b class="y">${code}</b>`);
     toast('🎉 Ligue créée !');
     await loadMyData();
     currentLeagueId = league.id;
     document.getElementById('modal-code').textContent = code;
-    document.getElementById('modal-link').textContent = \`Partage ce code : \${code}\`;
+    document.getElementById('modal-link').textContent = `Partage ce code : ${code}`;
     document.getElementById('modal-invite').classList.add('open');
     document.getElementById('cl-name').value = '';
     document.getElementById('cl-stake').value = '';
@@ -1171,8 +1171,8 @@ async function joinLeague() {
     await dbInsert('league_members', { league_id: league.id, user_id: currentUser.id }, false);
     await dbUpsert('pronostics', { league_id: league.id, user_id: currentUser.id, ranking: myProno }, 'league_id,user_id');
 
-    addNotif('g','🔗',\`Tu as rejoint la ligue <b>\${league.name}</b> !\`);
-    toast(\`✅ Ligue "\${league.name}" rejointe !\`);
+    addNotif('g','🔗',`Tu as rejoint la ligue <b>${league.name}</b> !`);
+    toast(`✅ Ligue "${league.name}" rejointe !`);
     await loadMyData();
     nav('s-home');
     document.getElementById('join-code').value = '';
