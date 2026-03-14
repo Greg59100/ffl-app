@@ -559,22 +559,55 @@ async function authSubmit() {
   const password = document.getElementById('auth-password').value;
   const btn = document.getElementById('auth-btn');
   if (!email || !password) { showAuthError('Remplis tous les champs.'); return; }
+
+  const resetBtn = () => {
+    btn.textContent = authMode === 'signup' ? "S'inscrire" : 'Se connecter';
+    btn.disabled = false;
+  };
+
   btn.textContent = '…';
   btn.disabled = true;
 
-  if (authMode === 'signup') {
-    const username = document.getElementById('auth-username').value.trim();
-    if (!username) { showAuthError('Entre un pseudo.'); btn.textContent = "S'inscrire"; btn.disabled=false; return; }
-    const {error} = await sb.auth.signUp({
-      email, password,
-      options: { data: { username, display_name: username } }
-    });
-    if (error) { showAuthError(error.message); btn.textContent="S'inscrire"; btn.disabled=false; return; }
-    toast('📧 Vérifie ton email pour confirmer ton compte !');
-    btn.textContent="S'inscrire"; btn.disabled=false;
-  } else {
-    const {error} = await sb.auth.signInWithPassword({email, password});
-    if (error) { showAuthError('Email ou mot de passe incorrect.'); btn.textContent='Se connecter'; btn.disabled=false; return; }
+  // Timeout de sécurité - débloquer le bouton après 8s quoi qu'il arrive
+  const timeout = setTimeout(() => {
+    resetBtn();
+    showAuthError('Délai dépassé. Réessaie.');
+  }, 8000);
+
+  try {
+    if (authMode === 'signup') {
+      const username = document.getElementById('auth-username').value.trim();
+      if (!username) { clearTimeout(timeout); showAuthError('Entre un pseudo.'); resetBtn(); return; }
+      const {error} = await sb.auth.signUp({
+        email, password,
+        options: { data: { username, display_name: username } }
+      });
+      clearTimeout(timeout);
+      if (error) { showAuthError(error.message); resetBtn(); return; }
+      showAuthError('');
+      toast('📧 Vérifie ton email pour confirmer !');
+      resetBtn();
+    } else {
+      const {data, error} = await sb.auth.signInWithPassword({email, password});
+      clearTimeout(timeout);
+      if (error) { showAuthError('Email ou mot de passe incorrect.'); resetBtn(); return; }
+      // Connexion OK — onAuthStateChange va prendre le relais
+      if (data?.session) {
+        currentUser = data.session.user;
+        await loadProfile();
+        await loadMyData();
+        document.getElementById('bottom-nav').style.display = 'flex';
+        document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+        document.getElementById('s-home').classList.add('active');
+        document.getElementById('s-auth').classList.add('hidden');
+        document.querySelectorAll('.nav-btn').forEach(b=>b.classList.toggle('active',b.dataset.nav==='s-home'));
+        fetchL1().then(()=>renderHome());
+      }
+    }
+  } catch(e) {
+    clearTimeout(timeout);
+    showAuthError('Erreur : ' + e.message);
+    resetBtn();
   }
 }
 
