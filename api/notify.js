@@ -1,6 +1,12 @@
 module.exports = async function handler(req, res) {
-  if (req.headers['x-cron-secret'] !== process.env.CRON_SECRET) {
-    return res.status(401).json({ error: 'Unauthorized' });
+  // Vercel envoie Authorization: Bearer <CRON_SECRET>
+// On accepte aussi x-cron-secret pour les tests manuels
+const authHeader = req.headers['authorization'] || '';
+const isVercelCron = authHeader === `Bearer ${process.env.CRON_SECRET}`;
+const isManualTest = req.headers['x-cron-secret'] === process.env.CRON_SECRET;
+if (!isVercelCron && !isManualTest) {
+  return res.status(401).json({ error: 'Unauthorized' });
+}
   }
 
   const SUPABASE_URL = process.env.SUPABASE_URL;
