@@ -598,7 +598,7 @@ const L1_TEAMS = [
   {id:'rcst',name:'Strasbourg',short:'RCST',emoji:'🔵'},
   {id:'ang',name:'Angers',short:'ANG',emoji:'⚫'},
   {id:'hac',name:'Le Havre',short:'HAC',emoji:'🔵'},
-  {id:'aia',name:'Auxerre',short:'AJA',emoji:'⚫'},
+  {id:'aia',name:'Auxerre',short:'AIA',emoji:'⚫'},
   {id:'fcl',name:'Lorient',short:'FCL',emoji:'🟠'},
   {id:'pfc',name:'Paris FC',short:'PFC',emoji:'🔵'},
   {id:'fcmetz',name:'Metz',short:'METZ',emoji:'🔴'},
@@ -617,7 +617,7 @@ const L1_FALLBACK = [
   {pos:10,name:'Nantes',short:'FCN',emoji:'🟡',pts:28,j:24,g:7,n:7,p:10,gd:'-1'},
   {pos:11,name:'Toulouse',short:'TFC',emoji:'🟣',pts:27,j:24,g:7,n:6,p:11,gd:'-2'},
   {pos:12,name:'Strasbourg',short:'RCST',emoji:'🔵',pts:26,j:24,g:7,n:5,p:12,gd:'-4'},
-  {pos:13,name:'Auxerre',short:'AJA',emoji:'⚫',pts:24,j:24,g:6,n:6,p:12,gd:'-6'},
+  {pos:13,name:'Auxerre',short:'AIA',emoji:'⚫',pts:24,j:24,g:6,n:6,p:12,gd:'-6'},
   {pos:14,name:'Paris FC',short:'PFC',emoji:'🔵',pts:22,j:24,g:5,n:7,p:12,gd:'-8'},
   {pos:15,name:'Angers',short:'ANG',emoji:'⚫',pts:20,j:24,g:5,n:5,p:14,gd:'-12'},
   {pos:16,name:'Le Havre',short:'HAC',emoji:'🔵',pts:18,j:24,g:4,n:6,p:14,gd:'-15'},
@@ -868,16 +868,30 @@ function getDelta(pronoIdx, realPos) {
 async function fetchL1() {
   setApiStatus('loading');
   try {
-    const res = await fetch('https://api.football-data.org/v4/competitions/FL1/standings', {headers:{'X-Auth-Token':''}});
+    const res = await fetch('/api/standings');
     if (res.ok) {
       const data = await res.json();
-      l1Standings = data.standings[0].table.map((t,i)=>({pos:i+1,name:t.team.name,short:t.team.shortName||t.team.tla,emoji:'⚽',pts:t.points,j:t.playedGames,g:t.won,n:t.draw,p:t.lost,gd:(t.goalDifference>=0?'+':'')+t.goalDifference}));
-      setApiStatus('live',`Live · J${l1Standings[0]?.j||'?'}`);
-      return;
+      if (data.standings && data.standings[0]) {
+        l1Standings = data.standings[0].table.map((t,i)=>({
+          pos: i+1,
+          name: t.team.name,
+          short: t.team.shortName || t.team.tla,
+          emoji: '⚽',
+          pts: t.points,
+          j: t.playedGames,
+          g: t.won,
+          n: t.draw,
+          p: t.lost,
+          gd: (t.goalDifference >= 0 ? '+' : '') + t.goalDifference
+        }));
+        setApiStatus('live', `Live · J${l1Standings[0]?.j || '?'}`);
+        return;
+      }
     }
-  } catch(e){}
+  } catch(e) { console.log('fetchL1 error:', e); }
+  // Fallback
   l1Standings = JSON.parse(JSON.stringify(L1_FALLBACK));
-  setApiStatus('fallback','Simulation · J17');
+  setApiStatus('fallback', 'Simulation · J24');
 }
 
 function setApiStatus(status, label) {
@@ -939,7 +953,7 @@ function renderL1() {
   const banner = document.getElementById('l1-banner');
   if (l1Standings.length===0) { table.innerHTML=`<div class="spinner"><div class="spin"></div><div class="spin-lbl">Chargement…</div></div>`; return; }
   banner.style.display = 'block';
-  banner.innerHTML = `<b>ℹ️ Données de simulation</b> — L'API Ligue 1 nécessite un proxy côté serveur. Données simulées J17.`;
+  banner.innerHTML = `<b>ℹ️ Données de simulation</b> — Impossible de récupérer le classement live. Données simulées J24.`;
   let html = `<div class="card" style="margin:0 18px 16px;overflow:hidden"><div class="l1-row header"><div>#</div><div>Équipe</div><div style="text-align:right">Pts</div><div style="text-align:right">J</div><div style="text-align:right">DB</div><div style="text-align:right">Mon prono</div></div>`;
   l1Standings.forEach((t,i) => {
     let pc = i<3?'cl':i===3||i===4?'el':i>=15?'rel':'';
