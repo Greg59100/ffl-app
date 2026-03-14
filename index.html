@@ -669,13 +669,32 @@ async function authSubmit() {
   if (authMode === 'signup') {
     const username = document.getElementById('auth-username').value.trim();
     if (!username) { showAuthError('Entre un pseudo.'); btn.textContent="S'inscrire"; btn.disabled=false; return; }
-    const {error} = await sb.auth.signUp({
-      email, password,
-      options: { data: { username, display_name: username } }
-    });
-    if (error) { showAuthError(error.message); btn.textContent="S'inscrire"; btn.disabled=false; return; }
-    toast('📧 Vérifie ton email pour confirmer !');
-    btn.textContent="S'inscrire"; btn.disabled=false;
+    btn.textContent = '…'; btn.disabled = true;
+    try {
+      const data = await sbSignup(email, password, username);
+      if (data.error || data.msg) {
+        showAuthError(data.error_description || data.msg || data.error || 'Erreur inscription');
+        btn.textContent="S'inscrire"; btn.disabled=false; return;
+      }
+      // If email confirmation is disabled, user is directly logged in
+      if (data.access_token) {
+        saveSession(data);
+        currentUser = data.user;
+        currentProfile = {
+          id: data.user.id,
+          username: username,
+          display_name: username
+        };
+        await loadMyData();
+        goHome();
+      } else {
+        toast('📧 Vérifie ton email pour confirmer !');
+        btn.textContent="S'inscrire"; btn.disabled=false;
+      }
+    } catch(e) {
+      showAuthError('Erreur : ' + e.message);
+      btn.textContent="S'inscrire"; btn.disabled=false;
+    }
     return;
   }
 
@@ -1283,11 +1302,13 @@ function goAuth() {
 // Bind buttons directly at script end
 (function bindButtons() {
   var btn = document.getElementById('auth-btn');
-  if (btn) { btn.onclick = authSubmit; }
+  if (btn) { btn.onclick = function(e){ e.preventDefault(); authSubmit(); }; }
   var email = document.getElementById('auth-email');
   var pass = document.getElementById('auth-password');
-  if (email) email.onkeydown = function(e){ if(e.key==='Enter') authSubmit(); };
-  if (pass) pass.onkeydown = function(e){ if(e.key==='Enter') authSubmit(); };
+  var user = document.getElementById('auth-username');
+  if (email) email.onkeydown = function(e){ if(e.key==='Enter'){ e.preventDefault(); authSubmit(); } };
+  if (pass) pass.onkeydown = function(e){ if(e.key==='Enter'){ e.preventDefault(); authSubmit(); } };
+  if (user) user.onkeydown = function(e){ if(e.key==='Enter'){ e.preventDefault(); authSubmit(); } };
   console.log('Buttons bound:', btn ? 'OK' : 'FAIL');
 })();
 </script>
