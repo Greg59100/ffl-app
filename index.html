@@ -584,24 +584,24 @@ setTimeout(function(){
 //  DATA
 // ═══════════════════════════════════════════════
 const L1_TEAMS = [
-  {id:'psg',name:'Paris Saint-Germain',short:'PSG',emoji:'🔴'},
-  {id:'om',name:'Marseille',short:'OM',emoji:'🔵'},
-  {id:'asm',name:'Monaco',short:'ASM',emoji:'🟡'},
-  {id:'losc',name:'Lille',short:'LOSC',emoji:'🔵'},
-  {id:'ogcn',name:'Nice',short:'OGCN',emoji:'🔴'},
-  {id:'ol',name:'Lyon',short:'OL',emoji:'🔵'},
-  {id:'srfc',name:'Rennes',short:'SRFC',emoji:'⚫'},
-  {id:'rcl',name:'Lens',short:'RCL',emoji:'🟡'},
-  {id:'fcn',name:'Nantes',short:'FCN',emoji:'🟡'},
-  {id:'fcm',name:'Brest',short:'FCM',emoji:'⚫'},
-  {id:'tfc',name:'Toulouse',short:'TFC',emoji:'🟣'},
-  {id:'rcst',name:'Strasbourg',short:'RCST',emoji:'🔵'},
-  {id:'ang',name:'Angers',short:'ANG',emoji:'⚫'},
-  {id:'hac',name:'Le Havre',short:'HAC',emoji:'🔵'},
-  {id:'aia',name:'Auxerre',short:'AIA',emoji:'⚫'},
-  {id:'fcl',name:'Lorient',short:'FCL',emoji:'🟠'},
-  {id:'pfc',name:'Paris FC',short:'PFC',emoji:'🔵'},
-  {id:'fcmetz',name:'Metz',short:'METZ',emoji:'🔴'},
+  {id:'psg',name:'Paris Saint-Germain',short:'PSG',tla:'PSG',emoji:'🔴'},
+  {id:'om',name:'Marseille',short:'OM',tla:'MAR',emoji:'🔵'},
+  {id:'asm',name:'Monaco',short:'ASM',tla:'ASM',emoji:'🟡'},
+  {id:'losc',name:'Lille',short:'LOSC',tla:'LIL',emoji:'🔵'},
+  {id:'ogcn',name:'Nice',short:'OGCN',tla:'NIC',emoji:'🔴'},
+  {id:'ol',name:'Lyon',short:'OL',tla:'LYO',emoji:'🔵'},
+  {id:'srfc',name:'Rennes',short:'SRFC',tla:'REN',emoji:'⚫'},
+  {id:'rcl',name:'Lens',short:'RCL',tla:'RCL',emoji:'🟡'},
+  {id:'fcn',name:'Nantes',short:'FCN',tla:'NAN',emoji:'🟡'},
+  {id:'fcm',name:'Brest',short:'FCM',tla:'BRE',emoji:'⚫'},
+  {id:'tfc',name:'Toulouse',short:'TFC',tla:'TOU',emoji:'🟣'},
+  {id:'rcst',name:'Strasbourg',short:'RCST',tla:'RC ',emoji:'🔵'},
+  {id:'ang',name:'Angers',short:'ANG',tla:'ANG',emoji:'⚫'},
+  {id:'hac',name:'Le Havre',short:'HAC',tla:'HAC',emoji:'🔵'},
+  {id:'aia',name:'Auxerre',short:'AIA',tla:'AJA',emoji:'⚫'},
+  {id:'fcl',name:'Lorient',short:'FCL',tla:'FCL',emoji:'🟠'},
+  {id:'pfc',name:'Paris FC',short:'PFC',tla:'PFC',emoji:'🔵'},
+  {id:'fcmetz',name:'Metz',short:'METZ',tla:'FCM',emoji:'🔴'},
 ];
 
 const L1_FALLBACK = [
@@ -851,8 +851,36 @@ function calcScore(prono, standings) {
   return total;
 }
 
+// Exact mapping between API tla codes and our internal team IDs
+const TLA_TO_ID = {
+  'PSG': 'psg',
+  'RCL': 'rcl',
+  'MAR': 'om',
+  'LYO': 'ol',
+  'ASM': 'asm',
+  'REN': 'srfc',
+  'LIL': 'losc',
+  'FCL': 'fcl',
+  'RC ': 'rcst',
+  'BRE': 'fcm',
+  'ANG': 'ang',
+  'TOU': 'tfc',
+  'PFC': 'pfc',
+  'NIC': 'ogcn',
+  'HAC': 'hac',
+  'AJA': 'aia',
+  'NAN': 'fcn',
+  'FCM': 'fcmetz'
+};
+
 function matchTeam(s, teamId) {
-  return (s.short||'').toLowerCase()===teamId || (s.name||'').toLowerCase().includes(teamId) || teamId.includes((s.short||'').toLowerCase());
+  // Try exact TLA mapping first
+  const tla = (s.tla || s.short || '').trim();
+  if (TLA_TO_ID[tla] === teamId) return true;
+  // Fallback to name matching
+  const sShort = (s.short||'').toLowerCase();
+  const sName = (s.name||'').toLowerCase();
+  return sShort === teamId || sName.includes(teamId) || teamId.includes(sShort);
 }
 
 function getDelta(pronoIdx, realPos) {
@@ -876,7 +904,8 @@ async function fetchL1() {
           pos: i+1,
           name: t.team.name,
           short: t.team.shortName || t.team.tla,
-          emoji: '⚽',
+          tla: t.team.tla,
+          emoji: L1_TEAMS.find(tm => TLA_TO_ID[t.team.tla?.trim()] === tm.id)?.emoji || '⚽',
           pts: t.points,
           j: t.playedGames,
           g: t.won,
