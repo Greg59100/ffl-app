@@ -463,11 +463,7 @@ const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
     storage: window.localStorage,
     persistSession: true,
     detectSessionInUrl: true,
-    flowType: 'implicit',
-    lock: async (name, acquireTimeout, fn) => {
-      // Bypass lock mechanism - fixes iOS Safari AbortError
-      return fn();
-    }
+    flowType: 'implicit'
   }
 });
 
@@ -560,54 +556,66 @@ async function authSubmit() {
   const btn = document.getElementById('auth-btn');
   if (!email || !password) { showAuthError('Remplis tous les champs.'); return; }
 
-  const resetBtn = () => {
-    btn.textContent = authMode === 'signup' ? "S'inscrire" : 'Se connecter';
-    btn.disabled = false;
-  };
-
   btn.textContent = '…';
   btn.disabled = true;
 
-  // Timeout de sécurité - débloquer le bouton après 8s quoi qu'il arrive
-  const timeout = setTimeout(() => {
-    resetBtn();
-    showAuthError('Délai dépassé. Réessaie.');
-  }, 8000);
+  if (authMode === 'signup') {
+    const username = document.getElementById('auth-username').value.trim();
+    if (!username) { showAuthError('Entre un pseudo.'); btn.textContent="S'inscrire"; btn.disabled=false; return; }
+    const {error} = await sb.auth.signUp({
+      email, password,
+      options: { data: { username, display_name: username } }
+    });
+    if (error) { showAuthError(error.message); btn.textContent="S'inscrire"; btn.disabled=false; return; }
+    toast('📧 Vérifie ton email pour confirmer !');
+    btn.textContent="S'inscrire"; btn.disabled=false;
+    return;
+  }
 
+  // LOGIN - use fetch directly to avoid Supabase client lock issues
   try {
-    if (authMode === 'signup') {
-      const username = document.getElementById('auth-username').value.trim();
-      if (!username) { clearTimeout(timeout); showAuthError('Entre un pseudo.'); resetBtn(); return; }
-      const {error} = await sb.auth.signUp({
-        email, password,
-        options: { data: { username, display_name: username } }
-      });
-      clearTimeout(timeout);
-      if (error) { showAuthError(error.message); resetBtn(); return; }
-      showAuthError('');
-      toast('📧 Vérifie ton email pour confirmer !');
-      resetBtn();
-    } else {
-      const {data, error} = await sb.auth.signInWithPassword({email, password});
-      clearTimeout(timeout);
-      if (error) { showAuthError('Email ou mot de passe incorrect.'); resetBtn(); return; }
-      // Connexion OK — onAuthStateChange va prendre le relais
-      if (data?.session) {
-        currentUser = data.session.user;
-        await loadProfile();
-        await loadMyData();
-        document.getElementById('bottom-nav').style.display = 'flex';
-        document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
-        document.getElementById('s-home').classList.add('active');
-        document.getElementById('s-auth').classList.add('hidden');
-        document.querySelectorAll('.nav-btn').forEach(b=>b.classList.toggle('active',b.dataset.nav==='s-home'));
-        fetchL1().then(()=>renderHome());
-      }
+    const res = await fetch(SUPABASE_URL + '/auth/v1/token?grant_type=password', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'apikey': SUPABASE_KEY,
+        'Authorization': 'Bearer ' + SUPABASE_KEY
+      },
+      body: JSON.stringify({ email, password })
+    });
+    const data = await res.json();
+    if (!res.ok || !data.access_token) {
+      showAuthError('Email ou mot de passe incorrect.');
+      btn.textContent='Se connecter'; btn.disabled=false;
+      return;
     }
+    // Store session manually
+    const sessionKey = 'sb-vnitjsqefthoxcwvtvif-auth-token';
+    localStorage.setItem(sessionKey, JSON.stringify({
+      access_token: data.access_token,
+      refresh_token: data.refresh_token,
+      expires_at: data.expires_at,
+      expires_in: data.expires_in,
+      token_type: 'bearer',
+      user: data.user
+    }));
+    // Use the user data directly
+    currentUser = data.user;
+    currentProfile = {
+      id: data.user.id,
+      username: data.user.user_metadata?.username || email.split('@')[0],
+      display_name: data.user.user_metadata?.display_name || data.user.user_metadata?.username || email.split('@')[0]
+    };
+    await loadMyData();
+    document.getElementById('bottom-nav').style.display = 'flex';
+    document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+    document.getElementById('s-home').classList.add('active');
+    document.getElementById('s-auth').classList.add('hidden');
+    document.querySelectorAll('.nav-btn').forEach(b=>b.classList.toggle('active', b.dataset.nav==='s-home'));
+    fetchL1().then(()=>renderHome());
   } catch(e) {
-    clearTimeout(timeout);
-    showAuthError('Erreur : ' + e.message);
-    resetBtn();
+    showAuthError('Erreur réseau. Réessaie.');
+    btn.textContent='Se connecter'; btn.disabled=false;
   }
 }
 
