@@ -458,7 +458,14 @@ textarea.input{resize:none;height:80px}
 // ═══════════════════════════════════════════════
 const SUPABASE_URL = 'https://vnitjsqefthoxcwvtvif.supabase.co';
 const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZuaXRqc3FlZnRob3hjd3Z0dmlmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM0NDM3OTUsImV4cCI6MjA4OTAxOTc5NX0.LWiENqYSuecs3hs7kGjIVYMbekKOqwBJxfWar0OLt9k';
-const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
+  auth: {
+    storage: window.localStorage,
+    persistSession: true,
+    detectSessionInUrl: true,
+    flowType: 'implicit'
+  }
+});
 
 // Remove splash after animation
 setTimeout(function(){
