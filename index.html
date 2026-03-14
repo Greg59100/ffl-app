@@ -952,8 +952,13 @@ function renderL1() {
   const table = document.getElementById('l1-table');
   const banner = document.getElementById('l1-banner');
   if (l1Standings.length===0) { table.innerHTML=`<div class="spinner"><div class="spin"></div><div class="spin-lbl">Chargement…</div></div>`; return; }
-  banner.style.display = 'block';
-  banner.innerHTML = `<b>ℹ️ Données de simulation</b> — Impossible de récupérer le classement live. Données simulées J24.`;
+  // Only show banner if using fallback data
+  if (l1Standings === L1_FALLBACK || JSON.stringify(l1Standings) === JSON.stringify(L1_FALLBACK)) {
+    banner.style.display = 'block';
+    banner.innerHTML = `<b>ℹ️ Données de simulation</b> — Impossible de récupérer le classement live. Données simulées J24.`;
+  } else {
+    banner.style.display = 'none';
+  }
   let html = `<div class="card" style="margin:0 18px 16px;overflow:hidden"><div class="l1-row header"><div>#</div><div>Équipe</div><div style="text-align:right">Pts</div><div style="text-align:right">J</div><div style="text-align:right">DB</div><div style="text-align:right">Mon prono</div></div>`;
   l1Standings.forEach((t,i) => {
     let pc = i<3?'cl':i===3||i===4?'el':i>=15?'rel':'';
