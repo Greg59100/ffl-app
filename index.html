@@ -679,8 +679,12 @@ async function authSubmit() {
     return;
   }
 
-  // LOGIN - use fetch directly to avoid Supabase client lock issues
+  // LOGIN
+  btn.textContent = '…';
+  btn.disabled = true;
+  console.log('1. Tentative connexion pour:', email);
   try {
+    console.log('2. Envoi fetch...');
     const res = await fetch(SUPABASE_URL + '/auth/v1/token?grant_type=password', {
       method: 'POST',
       headers: {
@@ -690,13 +694,15 @@ async function authSubmit() {
       },
       body: JSON.stringify({ email, password })
     });
+    console.log('3. Réponse reçue, status:', res.status);
     const data = await res.json();
+    console.log('4. Data:', data.access_token ? 'token OK' : 'pas de token', data.error || '');
     if (!res.ok || !data.access_token) {
-      showAuthError('Email ou mot de passe incorrect.');
+      showAuthError(data.error_description || data.msg || 'Email ou mot de passe incorrect.');
       btn.textContent='Se connecter'; btn.disabled=false;
       return;
     }
-    // Store session
+    console.log('5. Sauvegarde session...');
     saveSession(data);
     currentUser = data.user;
     currentProfile = {
@@ -704,11 +710,15 @@ async function authSubmit() {
       username: data.user.user_metadata?.username || email.split('@')[0],
       display_name: data.user.user_metadata?.display_name || data.user.user_metadata?.username || email.split('@')[0]
     };
+    console.log('6. loadProfile...');
     await loadProfile();
+    console.log('7. loadMyData...');
     await loadMyData();
+    console.log('8. goHome!');
     goHome();
   } catch(e) {
-    showAuthError('Erreur réseau. Réessaie.');
+    console.error('ERREUR:', e);
+    showAuthError('Erreur : ' + e.message);
     btn.textContent='Se connecter'; btn.disabled=false;
   }
 }
