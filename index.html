@@ -6,7 +6,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1, user-scalable=no">
 <title>FFL — Friends Farmers League</title>
 <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:ital,wght@0,400;0,600;0,700;0,800;0,900;1,700;1,800;1,900&display=swap" rel="stylesheet">
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.3/dist/umd/supabase.min.js"></script>
+<!-- Supabase via REST API direct - no SDK needed -->
 <style>
 :root {
   --black:#080808; --dark:#111; --card:#181818; --card2:#212121; --card3:#2a2a2a;
@@ -460,14 +460,121 @@ textarea.input{resize:none;height:80px}
 // ═══════════════════════════════════════════════
 const SUPABASE_URL = 'https://vnitjsqefthoxcwvtvif.supabase.co';
 const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZuaXRqc3FlZnRob3hjd3Z0dmlmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM0NDM3OTUsImV4cCI6MjA4OTAxOTc5NX0.LWiENqYSuecs3hs7kGjIVYMbekKOqwBJxfWar0OLt9k';
-const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
-  auth: {
-    storage: window.localStorage,
-    persistSession: true,
-    detectSessionInUrl: true,
-    flowType: 'implicit'
-  }
-});
+const SESSION_KEY = 'ffl_session';
+
+// ── REST API helpers ──
+function getSession() {
+  try { return JSON.parse(localStorage.getItem(SESSION_KEY)); } catch(e) { return null; }
+}
+function saveSession(data) {
+  localStorage.setItem(SESSION_KEY, JSON.stringify(data));
+}
+function clearSession() {
+  localStorage.removeItem(SESSION_KEY);
+}
+function getToken() {
+  return getSession()?.access_token || SUPABASE_KEY;
+}
+
+async function sbAuth(email, password) {
+  const res = await fetch(SUPABASE_URL + '/auth/v1/token?grant_type=password', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'apikey': SUPABASE_KEY },
+    body: JSON.stringify({ email, password })
+  });
+  return res.json();
+}
+
+async function sbSignup(email, password, username) {
+  const res = await fetch(SUPABASE_URL + '/auth/v1/signup', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'apikey': SUPABASE_KEY },
+    body: JSON.stringify({ email, password, data: { username, display_name: username } })
+  });
+  return res.json();
+}
+
+async function sbSignOut() {
+  const token = getToken();
+  await fetch(SUPABASE_URL + '/auth/v1/logout', {
+    method: 'POST',
+    headers: { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + token }
+  });
+  clearSession();
+}
+
+// Generic REST query helpers
+async function dbSelect(table, filters = '', options = '') {
+  const url = SUPABASE_URL + '/rest/v1/' + table + '?' + filters + (options ? '&' + options : '');
+  const res = await fetch(url, {
+    headers: {
+      'apikey': SUPABASE_KEY,
+      'Authorization': 'Bearer ' + getToken(),
+      'Content-Type': 'application/json'
+    }
+  });
+  if (!res.ok) { const e = await res.json(); throw new Error(e.message || res.statusText); }
+  return res.json();
+}
+
+async function dbInsert(table, data, returning = true) {
+  const res = await fetch(SUPABASE_URL + '/rest/v1/' + table, {
+    method: 'POST',
+    headers: {
+      'apikey': SUPABASE_KEY,
+      'Authorization': 'Bearer ' + getToken(),
+      'Content-Type': 'application/json',
+      'Prefer': returning ? 'return=representation' : 'return=minimal'
+    },
+    body: JSON.stringify(data)
+  });
+  if (!res.ok) { const e = await res.json(); throw new Error(e.message || res.statusText); }
+  if (!returning) return null;
+  return res.json();
+}
+
+async function dbUpsert(table, data, onConflict) {
+  const res = await fetch(SUPABASE_URL + '/rest/v1/' + table + '?on_conflict=' + onConflict, {
+    method: 'POST',
+    headers: {
+      'apikey': SUPABASE_KEY,
+      'Authorization': 'Bearer ' + getToken(),
+      'Content-Type': 'application/json',
+      'Prefer': 'return=minimal,resolution=merge-duplicates'
+    },
+    body: JSON.stringify(data)
+  });
+  if (!res.ok) { const e = await res.json(); throw new Error(e.message || res.statusText); }
+  return true;
+}
+
+async function dbUpdate(table, data, filter) {
+  const res = await fetch(SUPABASE_URL + '/rest/v1/' + table + '?' + filter, {
+    method: 'PATCH',
+    headers: {
+      'apikey': SUPABASE_KEY,
+      'Authorization': 'Bearer ' + getToken(),
+      'Content-Type': 'application/json',
+      'Prefer': 'return=minimal'
+    },
+    body: JSON.stringify(data)
+  });
+  if (!res.ok) { const e = await res.json(); throw new Error(e.message || res.statusText); }
+  return true;
+}
+
+async function dbDelete(table, filter) {
+  const res = await fetch(SUPABASE_URL + '/rest/v1/' + table + '?' + filter, {
+    method: 'DELETE',
+    headers: {
+      'apikey': SUPABASE_KEY,
+      'Authorization': 'Bearer ' + getToken(),
+      'Content-Type': 'application/json'
+    }
+  });
+  if (!res.ok) { const e = await res.json(); throw new Error(e.message || res.statusText); }
+  return true;
+}
 
 // Remove splash after animation
 setTimeout(function(){
@@ -591,30 +698,17 @@ async function authSubmit() {
       btn.textContent='Se connecter'; btn.disabled=false;
       return;
     }
-    // Store session manually
-    const sessionKey = 'sb-vnitjsqefthoxcwvtvif-auth-token';
-    localStorage.setItem(sessionKey, JSON.stringify({
-      access_token: data.access_token,
-      refresh_token: data.refresh_token,
-      expires_at: data.expires_at,
-      expires_in: data.expires_in,
-      token_type: 'bearer',
-      user: data.user
-    }));
-    // Use the user data directly
+    // Store session
+    saveSession(data);
     currentUser = data.user;
     currentProfile = {
       id: data.user.id,
       username: data.user.user_metadata?.username || email.split('@')[0],
       display_name: data.user.user_metadata?.display_name || data.user.user_metadata?.username || email.split('@')[0]
     };
+    await loadProfile();
     await loadMyData();
-    document.getElementById('bottom-nav').style.display = 'flex';
-    document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
-    document.getElementById('s-home').classList.add('active');
-    document.getElementById('s-auth').classList.add('hidden');
-    document.querySelectorAll('.nav-btn').forEach(b=>b.classList.toggle('active', b.dataset.nav==='s-home'));
-    fetchL1().then(()=>renderHome());
+    goHome();
   } catch(e) {
     showAuthError('Erreur réseau. Réessaie.');
     btn.textContent='Se connecter'; btn.disabled=false;
@@ -624,87 +718,73 @@ async function authSubmit() {
 async function authMagicLink() {
   const email = document.getElementById('auth-email').value.trim();
   if (!email) { showAuthError('Entre ton email.'); return; }
-  const {error} = await sb.auth.signInWithOtp({email});
-  if (error) { showAuthError(error.message); return; }
-  toast('✉️ Lien magique envoyé ! Vérifie ton email.');
+  try {
+    const res = await fetch(SUPABASE_URL + '/auth/v1/otp', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'apikey': SUPABASE_KEY },
+      body: JSON.stringify({ email })
+    });
+    if (!res.ok) { const e = await res.json(); showAuthError(e.message||'Erreur'); return; }
+    toast('✉️ Lien magique envoyé ! Vérifie ton email.');
+  } catch(e) { showAuthError('Erreur réseau.'); }
 }
 
 async function signOut() {
-  await sb.auth.signOut();
-  // onAuthStateChange SIGNED_OUT will handle the UI
+  await sbSignOut();
+  currentUser = null; currentProfile = null;
+  myLeagues = []; myProno = L1_TEAMS.map(t=>t.id); notifications = [];
+  document.getElementById('bottom-nav').style.display = 'none';
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  document.getElementById('s-auth').classList.remove('hidden');
+  document.getElementById('s-auth').classList.add('active');
 }
 
-// Listen to auth state changes
-sb.auth.onAuthStateChange(async (event, session) => {
-  if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED' || event === 'USER_UPDATED') {
-    if (session?.user) {
-      currentUser = session.user;
-      await loadProfile();
-      await loadMyData();
-      document.getElementById('bottom-nav').style.display = 'flex';
-      // Force hide auth screen and show home
-      document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
-      document.getElementById('s-home').classList.add('active');
-      document.getElementById('s-auth').classList.add('hidden');
-      document.querySelectorAll('.nav-btn').forEach(b=>b.classList.toggle('active',b.dataset.nav==='s-home'));
-      fetchL1().then(()=>renderHome());
-    }
-  } else if (event === 'SIGNED_OUT') {
-    currentUser = null; currentProfile = null;
-    myLeagues = []; myProno = L1_TEAMS.map(t=>t.id); notifications = [];
-    document.getElementById('bottom-nav').style.display = 'none';
-    document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
-    document.getElementById('s-auth').classList.remove('hidden');
-    document.getElementById('s-auth').classList.add('active');
-  }
-});
+// Auth handled via direct REST calls
 
 // ═══════════════════════════════════════════════
 //  PROFILE
 // ═══════════════════════════════════════════════
 async function loadProfile() {
-  const {data, error} = await sb.from('profiles').select('*').eq('id', currentUser.id).single();
-  if (data) currentProfile = data;
+  try {
+    const rows = await dbSelect('profiles', 'id=eq.' + currentUser.id + '&select=*');
+    if (rows && rows.length > 0) currentProfile = rows[0];
+  } catch(e) { console.log('loadProfile error:', e); }
 }
 
 async function loadMyData() {
-  // Load my pronostic (global, not per-league for now)
   const pronoStr = localStorage.getItem('ffl_prono_' + currentUser.id);
   if (pronoStr) { try { myProno = JSON.parse(pronoStr); } catch(e){} }
 
-  // Load leagues I'm in
-  const {data: memberships} = await sb.from('league_members')
-    .select('league_id')
-    .eq('user_id', currentUser.id);
+  try {
+    // Get my league memberships
+    const memberships = await dbSelect('league_members', 'user_id=eq.' + currentUser.id + '&select=league_id');
+    if (!memberships || memberships.length === 0) { myLeagues = []; return; }
 
-  if (!memberships || memberships.length === 0) { myLeagues = []; return; }
+    const leagueIds = memberships.map(m => m.league_id);
+    const idFilter = 'id=in.(' + leagueIds.join(',') + ')';
+    const leagues = await dbSelect('leagues', idFilter + '&select=*');
+    if (!leagues || leagues.length === 0) { myLeagues = []; return; }
 
-  const leagueIds = memberships.map(m => m.league_id);
-  const {data: leagues} = await sb.from('leagues').select('*').in('id', leagueIds);
-  if (!leagues) { myLeagues = []; return; }
+    myLeagues = await Promise.all(leagues.map(async (league) => {
+      const [members, pronos, profiles] = await Promise.all([
+        dbSelect('league_members', 'league_id=eq.' + league.id + '&select=user_id'),
+        dbSelect('pronostics', 'league_id=eq.' + league.id + '&select=user_id,ranking'),
+        dbSelect('profiles', 'select=id,username,display_name')
+      ]);
 
-  // For each league, load members + their pronostics
-  myLeagues = await Promise.all(leagues.map(async (league) => {
-    const {data: members} = await sb.from('league_members')
-      .select('user_id, profiles(id, username, display_name)')
-      .eq('league_id', league.id);
-
-    const {data: pronos} = await sb.from('pronostics')
-      .select('user_id, ranking')
-      .eq('league_id', league.id);
-
-    const players = (members || []).map(m => {
-      const prono = pronos?.find(p => p.user_id === m.user_id);
-      return {
-        id: m.user_id,
-        name: m.profiles?.display_name || m.profiles?.username || 'Joueur',
-        prono: prono ? prono.ranking : [],
-        isMe: m.user_id === currentUser.id
-      };
-    });
-
-    return { ...league, players };
-  }));
+      const players = (members || []).map(m => {
+        const profile = profiles?.find(p => p.id === m.user_id);
+        const prono = pronos?.find(p => p.user_id === m.user_id);
+        return {
+          id: m.user_id,
+          name: profile?.display_name || profile?.username || 'Joueur',
+          prono: prono ? prono.ranking : [],
+          isMe: m.user_id === currentUser.id
+        };
+      });
+      return { ...league, players };
+    }));
+  } catch(e) { console.log('loadMyData error:', e); myLeagues = []; }
 }
 
 // ═══════════════════════════════════════════════
@@ -881,16 +961,18 @@ async function saveProno() {
   // Save locally
   localStorage.setItem('ffl_prono_'+currentUser.id, JSON.stringify(myProno));
 
-  // Save to Supabase for each league the user is in
-  const saves = myLeagues.map(league =>
-    sb.from('pronostics').upsert({
-      league_id: league.id,
-      user_id: currentUser.id,
-      ranking: myProno,
-      updated_at: new Date().toISOString()
-    }, {onConflict: 'league_id,user_id'})
-  );
-  await Promise.all(saves);
+  // Save to Supabase for each league
+  try {
+    const saves = myLeagues.map(league =>
+      dbUpsert('pronostics', {
+        league_id: league.id,
+        user_id: currentUser.id,
+        ranking: myProno,
+        updated_at: new Date().toISOString()
+      }, 'league_id,user_id')
+    );
+    await Promise.all(saves);
+  } catch(e) { console.log('saveProno error:', e); }
 
   addNotif('g','💾','Ton pronostic a été <b>sauvegardé</b> sur tous tes ligues !');
   toast('✅ Pronostic sauvegardé !');
@@ -1039,30 +1121,30 @@ async function createLeague() {
   if (!currentUser) { toast('⚠️ Tu dois être connecté !'); return; }
 
   const code = genCode();
+  try {
+    // Insert league
+    const rows = await dbInsert('leagues', {
+      name, code, stake: stake||null, created_by: currentUser.id, season: '2024-25'
+    });
+    const league = Array.isArray(rows) ? rows[0] : rows;
+    if (!league || !league.id) { toast('❌ Erreur création ligue'); return; }
 
-  // Insert league
-  const {data: league, error: leagueErr} = await sb.from('leagues').insert({
-    name, code, stake: stake||null, created_by: currentUser.id, season: '2024-25'
-  }).select().single();
+    // Add creator as member
+    await dbInsert('league_members', { league_id: league.id, user_id: currentUser.id }, false);
 
-  if (leagueErr) { toast('❌ Erreur : '+leagueErr.message); return; }
+    // Save initial prono
+    await dbInsert('pronostics', { league_id: league.id, user_id: currentUser.id, ranking: myProno }, false);
 
-  // Add creator as member
-  await sb.from('league_members').insert({ league_id: league.id, user_id: currentUser.id });
-
-  // Save initial prono
-  await sb.from('pronostics').insert({ league_id: league.id, user_id: currentUser.id, ranking: myProno });
-
-  addNotif('g','🏆',`Ligue <b>${name}</b> créée ! Code : <b class="y">${code}</b>`);
-  toast('🎉 Ligue créée !');
-
-  await loadMyData();
-  currentLeagueId = league.id;
-  document.getElementById('modal-code').textContent = code;
-  document.getElementById('modal-link').textContent = `Partage ce code à tes amis : ${code}`;
-  document.getElementById('modal-invite').classList.add('open');
-  document.getElementById('cl-name').value = '';
-  document.getElementById('cl-stake').value = '';
+    addNotif('g','🏆',\`Ligue <b>\${name}</b> créée ! Code : <b class="y">\${code}</b>\`);
+    toast('🎉 Ligue créée !');
+    await loadMyData();
+    currentLeagueId = league.id;
+    document.getElementById('modal-code').textContent = code;
+    document.getElementById('modal-link').textContent = \`Partage ce code : \${code}\`;
+    document.getElementById('modal-invite').classList.add('open');
+    document.getElementById('cl-name').value = '';
+    document.getElementById('cl-stake').value = '';
+  } catch(e) { toast('❌ Erreur : ' + e.message); return; }
 }
 
 async function joinLeague() {
@@ -1070,32 +1152,29 @@ async function joinLeague() {
   if (!code||code.length<3) { toast('⚠️ Entre un code valide !'); return; }
   if (!currentUser) { toast('⚠️ Tu dois être connecté !'); return; }
 
-  // Find league by code
-  const {data: league, error} = await sb.from('leagues').select('*').eq('code', code).single();
-  if (error||!league) { toast('❌ Code introuvable. Vérifie le code !'); return; }
+  try {
+    const leagues = await dbSelect('leagues', 'code=eq.' + code + '&select=*');
+    if (!leagues || leagues.length === 0) { toast('❌ Code introuvable !'); return; }
+    const league = leagues[0];
 
-  // Check not already member
-  const {data: existing} = await sb.from('league_members').select('id').eq('league_id', league.id).eq('user_id', currentUser.id).single();
-  if (existing) { toast('Tu es déjà dans cette ligue !'); return; }
+    const existing = await dbSelect('league_members', 'league_id=eq.' + league.id + '&user_id=eq.' + currentUser.id);
+    if (existing && existing.length > 0) { toast('Tu es déjà dans cette ligue !'); return; }
 
-  // Join
-  const {error: joinErr} = await sb.from('league_members').insert({ league_id: league.id, user_id: currentUser.id });
-  if (joinErr) { toast('❌ Erreur : '+joinErr.message); return; }
+    await dbInsert('league_members', { league_id: league.id, user_id: currentUser.id }, false);
+    await dbUpsert('pronostics', { league_id: league.id, user_id: currentUser.id, ranking: myProno }, 'league_id,user_id');
 
-  // Save prono
-  await sb.from('pronostics').upsert({ league_id: league.id, user_id: currentUser.id, ranking: myProno }, {onConflict:'league_id,user_id'});
-
-  addNotif('g','🔗',`Tu as rejoint la ligue <b>${league.name}</b> !`);
-  toast(`✅ Ligue "${league.name}" rejointe !`);
-  await loadMyData();
-  nav('s-home');
-  document.getElementById('join-code').value = '';
+    addNotif('g','🔗',\`Tu as rejoint la ligue <b>\${league.name}</b> !\`);
+    toast(\`✅ Ligue "\${league.name}" rejointe !\`);
+    await loadMyData();
+    nav('s-home');
+    document.getElementById('join-code').value = '';
+  } catch(e) { toast('❌ Erreur : ' + e.message); }
 }
 
 async function leaveLeague(id) {
   if (!confirm('Quitter cette ligue ?')) return;
-  await sb.from('league_members').delete().eq('league_id', id).eq('user_id', currentUser.id);
-  await sb.from('pronostics').delete().eq('league_id', id).eq('user_id', currentUser.id);
+  await dbDelete('league_members', 'league_id=eq.' + id + '&user_id=eq.' + currentUser.id);
+  await dbDelete('pronostics', 'league_id=eq.' + id + '&user_id=eq.' + currentUser.id);
   toast('👋 Ligue quittée');
   await loadMyData();
   nav('s-home');
@@ -1126,7 +1205,7 @@ function openEditProfile() {
 async function saveProfile() {
   const name = document.getElementById('ep-name').value.trim();
   if (!name) { toast('⚠️ Entre ton prénom !'); return; }
-  await sb.from('profiles').update({display_name: name}).eq('id', currentUser.id);
+  await dbUpdate('profiles', {display_name: name}, 'id=eq.' + currentUser.id);
   await loadProfile();
   closeModal('modal-edit-profile');
   renderProfil();
@@ -1148,26 +1227,48 @@ function toast(msg, duration=2500) {
 // ═══════════════════════════════════════════════
 //  INIT
 // ═══════════════════════════════════════════════
+function goHome() {
+  document.getElementById('bottom-nav').style.display = 'flex';
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  document.getElementById('s-home').classList.add('active');
+  document.getElementById('s-auth').classList.add('hidden');
+  document.querySelectorAll('.nav-btn').forEach(b=>b.classList.toggle('active',b.dataset.nav==='s-home'));
+  fetchL1().then(()=>renderHome());
+}
+
+function goAuth() {
+  document.getElementById('bottom-nav').style.display = 'none';
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  document.getElementById('s-auth').classList.remove('hidden');
+  document.getElementById('s-auth').classList.add('active');
+}
+
 (async () => {
-  // Check for existing session on load
-  const {data:{session}} = await sb.auth.getSession();
-  if (session?.user) {
-    // Already logged in
-    currentUser = session.user;
-    await loadProfile();
-    await loadMyData();
-    document.getElementById('bottom-nav').style.display = 'flex';
-    // Hide all screens then show home
-    document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
-    document.getElementById('s-home').classList.add('active');
-    document.querySelectorAll('.nav-btn').forEach(b=>b.classList.toggle('active',b.dataset.nav==='s-home'));
-    fetchL1().then(()=>renderHome());
+  const session = getSession();
+  if (session?.access_token && session?.user) {
+    // Verify token is still valid
+    try {
+      const res = await fetch(SUPABASE_URL + '/auth/v1/user', {
+        headers: { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + session.access_token }
+      });
+      if (res.ok) {
+        const user = await res.json();
+        currentUser = user;
+        currentProfile = {
+          id: user.id,
+          username: user.user_metadata?.username || user.email?.split('@')[0],
+          display_name: user.user_metadata?.display_name || user.user_metadata?.username || user.email?.split('@')[0]
+        };
+        await loadProfile();
+        await loadMyData();
+        goHome();
+      } else {
+        clearSession();
+        goAuth();
+      }
+    } catch(e) { goAuth(); }
   } else {
-    // Not logged in - show auth
-    document.getElementById('bottom-nav').style.display = 'none';
-    document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
-    document.getElementById('s-auth').classList.remove('hidden');
-    document.getElementById('s-auth').classList.add('active');
+    goAuth();
   }
 })();
 </script>
