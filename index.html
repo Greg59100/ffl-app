@@ -25,7 +25,7 @@ body{background:var(--black);color:var(--white);font-family:var(--font-b);font-s
 #app{max-width:430px;margin:0 auto;height:100vh;display:flex;flex-direction:column;position:relative;overflow:hidden}
 .screen{display:none;flex-direction:column;flex:1;overflow:hidden}
 .screen.active{display:flex}
-.scroll{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding-bottom:90px}
+.scroll{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding-bottom:100px}
 .scroll::-webkit-scrollbar{display:none}
 .topbar{display:flex;align-items:center;justify-content:space-between;padding:14px 18px 10px;flex-shrink:0;background:linear-gradient(to bottom,var(--black) 70%,transparent)}
 .logo{display:flex;align-items:center;gap:6px}
@@ -34,7 +34,7 @@ body{background:var(--black);color:var(--white);font-family:var(--font-b);font-s
 .icon-btn{width:36px;height:36px;border-radius:9px;background:var(--card);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:16px;flex-shrink:0;transition:background .15s}
 .icon-btn:hover{background:var(--card2)}
 .topbar-row{display:flex;align-items:center;gap:10px}
-.bottom-nav{display:none;background:rgba(10,10,10,.97);backdrop-filter:blur(20px);border-top:1px solid var(--border);padding:8px 0 max(env(safe-area-inset-bottom),12px);flex-shrink:0}.bottom-nav.visible{display:flex}
+.bottom-nav{display:none;position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:430px;background:rgba(10,10,10,.97);backdrop-filter:blur(20px);border-top:1px solid var(--border);padding:8px 0 max(env(safe-area-inset-bottom),12px);flex-shrink:0;z-index:100}.bottom-nav.visible{display:flex}
 .nav-btn{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;padding:2px 0;opacity:.4;transition:opacity .2s}
 .nav-btn.active{opacity:1}
 .nav-btn .ni{font-size:20px;line-height:1;display:flex;align-items:center;justify-content:center;color:var(--gray2)}.nav-btn .ni svg{stroke:currentColor}.nav-btn.active .ni{color:var(--green)}
