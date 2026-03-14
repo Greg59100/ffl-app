@@ -271,7 +271,7 @@ textarea.input{resize:none;height:80px}
     <div class="hero-name" id="home-name">MON <em>FFL</em></div>
     <div class="season-box">
       <div class="s-lbl">🏆 Saison en cours</div>
-      <div class="s-title">Ligue 1 — 2024/25</div>
+      <div class="s-title">Ligue 1 — 2025/26</div>
       <div class="s-bar-bg"><div class="s-bar-fill" id="season-bar" style="width:0%"></div></div>
       <div class="s-bar-labels"><span>J1</span><strong id="season-jday">Chargement…</strong><span>J34</span></div>
     </div>
@@ -591,38 +591,38 @@ const L1_TEAMS = [
   {id:'ogcn',name:'Nice',short:'OGCN',emoji:'🔴'},
   {id:'ol',name:'Lyon',short:'OL',emoji:'🔵'},
   {id:'srfc',name:'Rennes',short:'SRFC',emoji:'⚫'},
-  {id:'asse',name:'Saint-Étienne',short:'ASSE',emoji:'🟢'},
   {id:'rcl',name:'Lens',short:'RCL',emoji:'🟡'},
   {id:'fcn',name:'Nantes',short:'FCN',emoji:'🟡'},
-  {id:'fcgb',name:'Bordeaux',short:'FCGB',emoji:'⚫'},
   {id:'fcm',name:'Brest',short:'FCM',emoji:'⚫'},
   {id:'tfc',name:'Toulouse',short:'TFC',emoji:'🟣'},
-  {id:'mhsc',name:'Montpellier',short:'MHSC',emoji:'🔵'},
   {id:'rcst',name:'Strasbourg',short:'RCST',emoji:'🔵'},
   {id:'ang',name:'Angers',short:'ANG',emoji:'⚫'},
   {id:'hac',name:'Le Havre',short:'HAC',emoji:'🔵'},
   {id:'aia',name:'Auxerre',short:'AIA',emoji:'⚫'},
+  {id:'fcl',name:'Lorient',short:'FCL',emoji:'🟠'},
+  {id:'pfc',name:'Paris FC',short:'PFC',emoji:'🔵'},
+  {id:'fcmetz',name:'Metz',short:'METZ',emoji:'🔴'},
 ];
 
 const L1_FALLBACK = [
-  {pos:1,name:'Paris Saint-Germain',short:'PSG',emoji:'🔴',pts:45,j:17,g:14,n:3,p:0,gd:'+42'},
-  {pos:2,name:'Marseille',short:'OM',emoji:'🔵',pts:38,j:17,g:12,n:2,p:3,gd:'+22'},
-  {pos:3,name:'Monaco',short:'ASM',emoji:'🟡',pts:36,j:17,g:11,n:3,p:3,gd:'+18'},
-  {pos:4,name:'Lens',short:'RCL',emoji:'🟡',pts:32,j:17,g:9,n:5,p:3,gd:'+10'},
-  {pos:5,name:'Nice',short:'OGCN',emoji:'🔴',pts:30,j:17,g:8,n:6,p:3,gd:'+9'},
-  {pos:6,name:'Lyon',short:'OL',emoji:'🔵',pts:28,j:17,g:8,n:4,p:5,gd:'+5'},
-  {pos:7,name:'Rennes',short:'SRFC',emoji:'⚫',pts:27,j:17,g:7,n:6,p:4,gd:'+3'},
-  {pos:8,name:'Brest',short:'FCM',emoji:'⚫',pts:24,j:17,g:6,n:6,p:5,gd:'+1'},
-  {pos:9,name:'Lille',short:'LOSC',emoji:'🔵',pts:23,j:17,g:6,n:5,p:6,gd:'+2'},
-  {pos:10,name:'Toulouse',short:'TFC',emoji:'🟣',pts:21,j:17,g:5,n:6,p:6,gd:'-2'},
-  {pos:11,name:'Strasbourg',short:'RCST',emoji:'🔵',pts:20,j:17,g:5,n:5,p:7,gd:'-3'},
-  {pos:12,name:'Montpellier',short:'MHSC',emoji:'🔵',pts:18,j:17,g:4,n:6,p:7,gd:'-6'},
-  {pos:13,name:'Nantes',short:'FCN',emoji:'🟡',pts:17,j:17,g:4,n:5,p:8,gd:'-7'},
-  {pos:14,name:'Saint-Étienne',short:'ASSE',emoji:'🟢',pts:16,j:17,g:4,n:4,p:9,gd:'-10'},
-  {pos:15,name:'Le Havre',short:'HAC',emoji:'🔵',pts:14,j:17,g:3,n:5,p:9,gd:'-12'},
-  {pos:16,name:'Angers',short:'ANG',emoji:'⚫',pts:13,j:17,g:3,n:4,p:10,gd:'-15'},
-  {pos:17,name:'Auxerre',short:'AIA',emoji:'⚫',pts:11,j:17,g:2,n:5,p:10,gd:'-18'},
-  {pos:18,name:'Bordeaux',short:'FCGB',emoji:'⚫',pts:8,j:17,g:1,n:5,p:11,gd:'-39'},
+  {pos:1,name:'Paris Saint-Germain',short:'PSG',emoji:'🔴',pts:52,j:24,g:17,n:1,p:6,gd:'+38'},
+  {pos:2,name:'Marseille',short:'OM',emoji:'🔵',pts:47,j:24,g:15,n:2,p:7,gd:'+25'},
+  {pos:3,name:'Monaco',short:'ASM',emoji:'🟡',pts:44,j:24,g:13,n:5,p:6,gd:'+20'},
+  {pos:4,name:'Lens',short:'RCL',emoji:'🟡',pts:40,j:24,g:12,n:4,p:8,gd:'+12'},
+  {pos:5,name:'Nice',short:'OGCN',emoji:'🔴',pts:38,j:24,g:11,n:5,p:8,gd:'+10'},
+  {pos:6,name:'Lyon',short:'OL',emoji:'🔵',pts:36,j:24,g:11,n:3,p:10,gd:'+8'},
+  {pos:7,name:'Lille',short:'LOSC',emoji:'🔵',pts:34,j:24,g:10,n:4,p:10,gd:'+6'},
+  {pos:8,name:'Rennes',short:'SRFC',emoji:'⚫',pts:33,j:24,g:9,n:6,p:9,gd:'+4'},
+  {pos:9,name:'Brest',short:'FCM',emoji:'⚫',pts:30,j:24,g:8,n:6,p:10,gd:'+2'},
+  {pos:10,name:'Nantes',short:'FCN',emoji:'🟡',pts:28,j:24,g:7,n:7,p:10,gd:'-1'},
+  {pos:11,name:'Toulouse',short:'TFC',emoji:'🟣',pts:27,j:24,g:7,n:6,p:11,gd:'-2'},
+  {pos:12,name:'Strasbourg',short:'RCST',emoji:'🔵',pts:26,j:24,g:7,n:5,p:12,gd:'-4'},
+  {pos:13,name:'Auxerre',short:'AIA',emoji:'⚫',pts:24,j:24,g:6,n:6,p:12,gd:'-6'},
+  {pos:14,name:'Paris FC',short:'PFC',emoji:'🔵',pts:22,j:24,g:5,n:7,p:12,gd:'-8'},
+  {pos:15,name:'Angers',short:'ANG',emoji:'⚫',pts:20,j:24,g:5,n:5,p:14,gd:'-12'},
+  {pos:16,name:'Le Havre',short:'HAC',emoji:'🔵',pts:18,j:24,g:4,n:6,p:14,gd:'-15'},
+  {pos:17,name:'Lorient',short:'FCL',emoji:'🟠',pts:15,j:24,g:3,n:6,p:15,gd:'-18'},
+  {pos:18,name:'Metz',short:'METZ',emoji:'🔴',pts:10,j:24,g:2,n:4,p:18,gd:'-35'},
 ];
 
 // ═══════════════════════════════════════════════
@@ -900,7 +900,7 @@ function renderLeagueCard(l) {
   const avs = l.players.slice(0,5).map((p,i)=>`<div class="av" style="background:${colors[i%colors.length]};color:#aaa">${initials(p.name)}</div>`).join('');
   const extra = l.players.length>5?`<div style="font-size:11px;color:var(--gray);margin-left:6px">+${l.players.length-5}</div>`:'';
   return `<div class="lc" onclick="openLeague('${l.id}')">
-    <div class="lc-head"><div><div class="lc-name">${l.name}</div><div class="lc-sub">Saison 2024/25 · ${l.players.length} joueur${l.players.length>1?'s':''}</div></div><div class="rank-badge">${myRank}<small>E</small></div></div>
+    <div class="lc-head"><div><div class="lc-name">${l.name}</div><div class="lc-sub">Saison 2025/26 · ${l.players.length} joueur${l.players.length>1?'s':''}</div></div><div class="rank-badge">${myRank}<small>E</small></div></div>
     <div class="lc-stats">
       <div class="lc-stat"><div class="lc-val y">${myScore.toLocaleString('fr')}</div><div class="lc-lbl">Mes pts</div></div>
       <div class="lc-stat"><div class="lc-val">${l.players.length}</div><div class="lc-lbl">Joueurs</div></div>
@@ -1132,7 +1132,7 @@ async function createLeague() {
   try {
     // Insert league
     const rows = await dbInsert('leagues', {
-      name, code, stake: stake||null, created_by: currentUser.id, season: '2024-25'
+      name, code, stake: stake||null, created_by: currentUser.id, season: '2025-26'
     });
     const league = Array.isArray(rows) ? rows[0] : rows;
     if (!league || !league.id) { toast('❌ Erreur création ligue'); return; }
