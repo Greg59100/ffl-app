@@ -229,21 +229,23 @@ textarea.input{resize:none;height:80px}
       <div class="auth-tab" onclick="authTab('signup')">Inscription</div>
     </div>
     <div class="auth-error" id="auth-error"></div>
-    <div id="auth-signup-extra" style="display:none">
-      <div class="input-wrap">
-        <div class="input-lbl">Ton pseudo</div>
-        <input class="input" id="auth-username" placeholder="Ex : Alex M." maxlength="30">
+    <form onsubmit="authSubmit(); return false;" autocomplete="on">
+      <div id="auth-signup-extra" style="display:none">
+        <div class="input-wrap">
+          <div class="input-lbl">Ton pseudo</div>
+          <input class="input" id="auth-username" name="username" autocomplete="nickname" placeholder="Ex : Alex M." maxlength="30">
+        </div>
       </div>
-    </div>
-    <div class="input-wrap">
-      <div class="input-lbl">Email</div>
-      <input class="input" id="auth-email" type="email" placeholder="ton@email.com">
-    </div>
-    <div class="input-wrap">
-      <div class="input-lbl">Mot de passe</div>
-      <input class="input" id="auth-password" type="password" placeholder="••••••••">
-    </div>
-    <button class="btn btn-green" id="auth-btn" onclick="authSubmit()">Se connecter</button>
+      <div class="input-wrap">
+        <div class="input-lbl">Email</div>
+        <input class="input" id="auth-email" name="email" type="email" autocomplete="email" placeholder="ton@email.com">
+      </div>
+      <div class="input-wrap">
+        <div class="input-lbl">Mot de passe</div>
+        <input class="input" id="auth-password" name="password" type="password" autocomplete="current-password" placeholder="••••••••">
+      </div>
+      <button type="submit" class="btn btn-green" id="auth-btn">Se connecter</button>
+    </form>
     <div id="auth-magic" style="margin-top:10px">
       <button class="btn btn-outline" onclick="authMagicLink()" style="font-size:13px">✉️ Lien magique par email</button>
     </div>
